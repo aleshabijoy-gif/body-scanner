@@ -1,8 +1,0 @@
-libgl1
-libsm6
-libxext6
-libxrender-dev
-libgomp1
-libtbbmalloc2
-libfreetype6
-libjpeg62-turbo

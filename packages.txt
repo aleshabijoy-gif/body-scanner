@@ -1,8 +1,3 @@
 libsm6
 libxext6
 libxrender-dev
-libgomp1
-libglib2.0-0
-libtbbmalloc2
-libwebp6
-libharfbuzz0b

@@ -1,12 +1,19 @@
 import streamlit as st
 import cv2
-import mediapipe as mp
 import numpy as np
 from PIL import Image
 
-# Initialize MediaPipe the legacy way
-mp_pose = mp.solutions.pose
-mp_drawing = mp.solutions.drawing_utils
+# Import mediapipe with error handling
+try:
+    import mediapipe as mp
+    mp_pose = mp.solutions.pose
+    mp_drawing = mp.solutions.drawing_utils
+except AttributeError:
+    # Fallback: try importing from the correct module path
+    from mediapipe.solutions import pose as mp_pose
+    from mediapipe.solutions import drawing_utils as mp_drawing
+
+# Initialize pose detector
 pose = mp_pose.Pose(
     static_image_mode=False,
     model_complexity=1,

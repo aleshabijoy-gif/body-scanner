@@ -1,1 +1,12 @@
-libgl1
+libsm6
+libxext6
+libxrender-dev
+libgomp1
+libglib2.0-0
+libatlas-base-dev
+libjasper-dev
+libtiff5
+libjasper1
+libharfbuzz0b
+libwebp6
+libtbb2

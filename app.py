@@ -4,16 +4,34 @@ os.environ['GLIBC_TUNABLES'] = 'glibc.cpu.hwcaps=-XSAVE,-XSAVEC,-AVX2,-GFNI,-AVX
 import streamlit as st
 import numpy as np
 from PIL import Image
+import urllib.request
 
-# Lazy load mediapipe to avoid import errors
+# Download pose landmarker model
+@st.cache_resource
+def download_model():
+    model_path = "/tmp/pose_landmarker.task"
+    if not os.path.exists(model_path):
+        url = "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite.task"
+        try:
+            urllib.request.urlretrieve(url, model_path)
+        except Exception as e:
+            st.error(f"Failed to download model: {e}")
+            return None
+    return model_path
+
+# Load mediapipe with model
 @st.cache_resource
 def load_mediapipe():
     try:
+        model_path = download_model()
+        if not model_path:
+            return None
+            
         import mediapipe as mp
         from mediapipe.tasks import python
         from mediapipe.tasks.python import vision
         
-        base_options = python.BaseOptions(model_asset_path=None)
+        base_options = python.BaseOptions(model_asset_path=model_path)
         options = vision.PoseLandmarkerOptions(
             base_options=base_options,
             output_segmentation_masks=False

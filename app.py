@@ -1,21 +1,29 @@
+import os
+os.environ['GLIBC_TUNABLES'] = 'glibc.cpu.hwcaps=-XSAVE,-XSAVEC,-AVX2,-GFNI,-AVX'
+
 import streamlit as st
 import numpy as np
 from PIL import Image
 
-try:
-    import mediapipe as mp
-    mp_pose = mp.solutions.pose
-except:
-    st.error("MediaPipe failed to load")
-    st.stop()
+# Lazy load mediapipe to avoid import errors
+@st.cache_resource
+def load_mediapipe():
+    try:
+        import mediapipe as mp
+        from mediapipe.tasks import python
+        from mediapipe.tasks.python import vision
+        
+        base_options = python.BaseOptions(model_asset_path=None)
+        options = vision.PoseLandmarkerOptions(
+            base_options=base_options,
+            output_segmentation_masks=False
+        )
+        return vision.PoseLandmarker.create_from_options(options)
+    except Exception as e:
+        st.error(f"Failed to load MediaPipe: {e}")
+        return None
 
-# Initialize pose detector
-pose = mp_pose.Pose(
-    static_image_mode=False,
-    model_complexity=1,
-    min_detection_confidence=0.5,
-    min_tracking_confidence=0.5
-)
+detector = load_mediapipe()
 
 st.set_page_config(page_title="BodyScan AI", layout="centered")
 
@@ -26,18 +34,23 @@ height_cm = st.number_input("Height (cm)", value=170.0)
 
 captured_file = st.camera_input("Take your Front Profile")
 
-if captured_file:
+if captured_file and detector:
     img = Image.open(captured_file)
     frame = np.array(img)
     
-    # Convert RGB to BGR for MediaPipe
-    import cv2
-    frame_bgr = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
-    results = pose.process(frame_bgr)
+    import mediapipe as mp
+    mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=frame)
+    
+    detection_result = detector.detect(mp_image)
 
-    if results.pose_landmarks:
-        l_sh = results.pose_landmarks.landmark[mp_pose.PoseLandmark.LEFT_SHOULDER]
-        r_sh = results.pose_landmarks.landmark[mp_pose.PoseLandmark.RIGHT_SHOULDER]
+    if detection_result.pose_landmarks and len(detection_result.pose_landmarks) > 0:
+        landmarks = detection_result.pose_landmarks[0]
+        
+        LEFT_SHOULDER = 11
+        RIGHT_SHOULDER = 12
+        
+        l_sh = landmarks[LEFT_SHOULDER]
+        r_sh = landmarks[RIGHT_SHOULDER]
         
         if abs(l_sh.y - r_sh.y) < 0.05:
             st.success("✅ Alignment looks good!")
@@ -47,3 +60,5 @@ if captured_file:
             st.warning("⚠️ Please stand straight! Your shoulders are tilted.")
     else:
         st.error("No person detected. Try standing further back.")
+elif not detector:
+    st.error("Please refresh the page to load MediaPipe")

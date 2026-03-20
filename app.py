@@ -1,12 +1,11 @@
 import streamlit as st
-import cv2
 import numpy as np
 from PIL import Image
 import mediapipe as mp
 from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
 
-# Initialize pose landmarker using the new Tasks API
+# Initialize pose landmarker
 base_options = python.BaseOptions(model_asset_path=None)
 options = vision.PoseLandmarkerOptions(
     base_options=base_options,
@@ -36,7 +35,6 @@ if captured_file:
     if detection_result.pose_landmarks and len(detection_result.pose_landmarks) > 0:
         landmarks = detection_result.pose_landmarks[0]
         
-        # Left and Right shoulder indices
         LEFT_SHOULDER = 11
         RIGHT_SHOULDER = 12
         

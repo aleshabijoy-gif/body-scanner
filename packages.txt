@@ -6,3 +6,4 @@ libgomp1
 libfreetype6
 libjpeg62-turbo
 libwebp6
+libglib2.0-0t64

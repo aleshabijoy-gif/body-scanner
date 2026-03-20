@@ -7,3 +7,4 @@ libtbbmalloc2
 libwebp6
 libfreetype6
 libjpeg62-turbo
+libglib2.0-0

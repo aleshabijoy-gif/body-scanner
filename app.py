@@ -1,17 +1,21 @@
 import streamlit as st
 import numpy as np
 from PIL import Image
-import mediapipe as mp
-from mediapipe.tasks import python
-from mediapipe.tasks.python import vision
 
-# Initialize pose landmarker
-base_options = python.BaseOptions(model_asset_path=None)
-options = vision.PoseLandmarkerOptions(
-    base_options=base_options,
-    output_segmentation_masks=False
+try:
+    import mediapipe as mp
+    mp_pose = mp.solutions.pose
+except:
+    st.error("MediaPipe failed to load")
+    st.stop()
+
+# Initialize pose detector
+pose = mp_pose.Pose(
+    static_image_mode=False,
+    model_complexity=1,
+    min_detection_confidence=0.5,
+    min_tracking_confidence=0.5
 )
-detector = vision.PoseLandmarker.create_from_options(options)
 
 st.set_page_config(page_title="BodyScan AI", layout="centered")
 
@@ -26,20 +30,14 @@ if captured_file:
     img = Image.open(captured_file)
     frame = np.array(img)
     
-    # Convert to MediaPipe Image format
-    mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=frame)
-    
-    # Detect pose landmarks
-    detection_result = detector.detect(mp_image)
+    # Convert RGB to BGR for MediaPipe
+    import cv2
+    frame_bgr = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
+    results = pose.process(frame_bgr)
 
-    if detection_result.pose_landmarks and len(detection_result.pose_landmarks) > 0:
-        landmarks = detection_result.pose_landmarks[0]
-        
-        LEFT_SHOULDER = 11
-        RIGHT_SHOULDER = 12
-        
-        l_sh = landmarks[LEFT_SHOULDER]
-        r_sh = landmarks[RIGHT_SHOULDER]
+    if results.pose_landmarks:
+        l_sh = results.pose_landmarks.landmark[mp_pose.PoseLandmark.LEFT_SHOULDER]
+        r_sh = results.pose_landmarks.landmark[mp_pose.PoseLandmark.RIGHT_SHOULDER]
         
         if abs(l_sh.y - r_sh.y) < 0.05:
             st.success("✅ Alignment looks good!")
